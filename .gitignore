@@ -1,0 +1,13 @@
+*.pyc
+*.toml
+chrome-win64/*
+datasets/*
+edgedriver_win64/*
+env/*
+images/*
+models/yolo11m_fake_1000.pt
+convert_format.py
+Labelme.exe
+crawl_images.py
+pre_predict.py
+test/*

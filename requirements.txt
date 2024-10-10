@@ -2,3 +2,5 @@ selenium
 requests
 ultralytics
 pillow
+msgspec
+tomli_w
