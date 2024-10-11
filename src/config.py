@@ -9,6 +9,9 @@ class BotConfig(msgspec.Struct):
     account: str
     password: str
 
+    ticket_name: str
+    ticket_item_name: str
+
     delay_sec: int = 0
     retry_times: int = 5
     headless: bool = True

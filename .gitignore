@@ -11,3 +11,6 @@ Labelme.exe
 crawl_images.py
 pre_predict.py
 test/*
+!config.toml
+.vscode/*
+TODO

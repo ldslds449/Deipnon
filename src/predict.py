@@ -45,6 +45,7 @@ class Captcha:
     def predict(
         self,
         images: Union[Image.Image, list[Image.Image]],
+        topK=5,
         detail: bool = False,
     ) -> Union[str, list[str], tuple[str, list], list[tuple[str, list]]]:
         if isinstance(images, Image.Image):
@@ -68,6 +69,9 @@ class Captcha:
             )
             # NMS
             data = self.NMS(data)
+            # select top-k
+            if len(data) > topK:
+                data = data[:topK]
             # sort by x value
             data = sorted(data, key=lambda x: x[1][0])
             data_list.append(data)

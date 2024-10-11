@@ -1,0 +1,11 @@
+web_url = ""                                          # login web url
+account = ""                                          # your account
+password = ""                                         # your password
+ticket_name = ""                                      # name of target ticket
+ticket_item_name = ""                                 # name of the target item
+delay_sec = 0                                         # delay second between each try
+retry_times = 5                                       # max retry times
+headless = false                                      # whether show browser
+web_driver_path = "./chrome-win64/chrome.exe"         # path to web driver, must be chrome web driver 
+model_path = "./models/yolo11m_fake_5000_real_550.pt" # path to captcha model
+proxy_server = ""                                     # proxy server url
