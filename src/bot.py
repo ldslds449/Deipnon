@@ -6,6 +6,7 @@ from typing import Callable, Optional
 
 import requests
 import msgspec
+import schedule
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -162,7 +163,7 @@ class Bot:
                     return True
             except NoSuchElementException as e:
                 logger.error("Cannot find the element! %s", e)
-            except TimeoutException:
+            except TimeoutException as e:
                 logger.error("Time ran out! %s", e)
             except AssertionError as e:
                 logger.error("Assertion: %s", e)
@@ -340,3 +341,25 @@ class Bot:
 
     def book(self) -> bool:
         return self.__retry_task(self.__book)
+
+    def wait_for_time_to_run_once(self):
+        start_time = self.bot_config.start_time
+        pre_login_time = self.bot_config.pre_login_time
+
+        def schedule_wrapper(func):
+            def wrapper():
+                func()
+                return schedule.CancelJob
+
+            return wrapper
+
+        schedule.every().day.at(start_time).do(schedule_wrapper(self.book))
+        schedule.every().day.at(pre_login_time).do(
+            schedule_wrapper(self.login)
+        )
+
+        logger.info("Start working...")
+
+        while True:
+            schedule.run_pending()
+            time.sleep(1)

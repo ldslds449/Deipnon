@@ -4,3 +4,4 @@ ultralytics
 pillow
 msgspec
 tomli_w
+schedule

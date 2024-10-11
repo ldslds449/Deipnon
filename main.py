@@ -1,13 +1,15 @@
 from src.bot import Bot
-from src.utils import get_config_file_path
+from src.utils import get_config_file_path, check_webdriver, download_webdriver
 from src.config import read_from_toml_file, write_to_toml_file
 
 if __name__ == "__main__":
     config_path = get_config_file_path()
     config = read_from_toml_file(config_path)
 
+    if not check_webdriver(config.web_driver_path):
+        config.web_driver_path = download_webdriver(config.web_driver_path)
+
     bot = Bot(config)
-    bot.login()
-    bot.book()
+    bot.wait_for_time_to_run_once()
 
     write_to_toml_file(config_path, config)
