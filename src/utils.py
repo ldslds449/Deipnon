@@ -1,22 +1,29 @@
 import os
 import sys
-import json
-import zipfile
 import logging
+
 import requests
-import platform
-import urllib.request
-from pathlib import Path
 
 
 def get_logger(name: str):
     """get a logger from the name"""
-    logger = logging.getLogger(name)
-    logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
-    return logger
+    level = os.environ.get("LOG_LEVEL", "INFO")
+    new_logger = logging.getLogger(name)
+    new_logger.setLevel(level)
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(level)
+    stream_handler_formatter = logging.Formatter(
+        "[%(asctime)s][%(name)s][%(levelname)s] %(message)s",
+        datefmt="%m/%d/%Y %I:%M:%S %p",
+    )
+    stream_handler.setFormatter(stream_handler_formatter)
+
+    new_logger.addHandler(stream_handler)
+    return new_logger
 
 
-logger = get_logger(__file__)
+logger = get_logger(__name__)
 
 
 def get_config_file_path():
@@ -39,42 +46,11 @@ def get_config_file_path():
         return DEFAULT_CONFIG_PATH
 
 
-def check_webdriver(webdriver_path: str):
-    """check whether webdriver exists"""
-    return os.path.exists(webdriver_path)
-
-
-def download_webdriver(webdriver_path: str):
-    webdriver_folder = os.path.dirname(os.path.normpath(webdriver_path))
-    logger.info("Auto downloading webdriver to %s", webdriver_folder)
-    if not os.path.exists(webdriver_folder):
-        os.makedirs(webdriver_folder)
-
-    system = platform.system()
-    if system != "Windows":
-        raise RuntimeError(f"{system} not supported!")
-
-    CHROME_WEBDRIVER_LIST_URL = "https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json"
-    webdriver_list = json.loads(
-        requests.get(CHROME_WEBDRIVER_LIST_URL, timeout=10).text
-    )
-
-    target_version = webdriver_list["versions"][0]
-    logger.info("Webdriver version: %s", target_version["version"])
-
-    download_url = None
-    for item in target_version["downloads"]["chrome"]:
-        if item["platform"] == "win64":
-            download_url = item["url"]
-            break
-
-    webdriver_file_name = os.path.join(webdriver_folder, "webdriver.zip")
-    urllib.request.urlretrieve(download_url, webdriver_file_name)
-
-    with zipfile.ZipFile(webdriver_file_name, "r") as zip_ref:
-        zip_ref.extractall(webdriver_folder)
-
-    for path in Path(webdriver_folder).rglob("chrome.exe"):
-        return path.as_posix()
-
-    raise RuntimeError("Download file error")
+def download_file(
+    url: str, file_path: str, verify: bool = True, timeout: int = 30
+):
+    with requests.get(url, stream=True, verify=verify, timeout=timeout) as r:
+        r.raise_for_status()
+        with open(file_path, "wb") as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)

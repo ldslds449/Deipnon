@@ -1,6 +1,8 @@
 import msgspec
 import os
 
+from .driver import WEB_DRIVER_TYPE
+
 
 class BotConfig(msgspec.Struct):
     """Config for Bot"""
@@ -14,6 +16,7 @@ class BotConfig(msgspec.Struct):
 
     start_time: str
     pre_login_time: str
+    web_driver_type: WEB_DRIVER_TYPE
 
     delay_sec: int = 0
     retry_times: int = 5
