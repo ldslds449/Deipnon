@@ -3,11 +3,12 @@ import datetime
 import time
 import os
 from typing import Callable, Optional
+from abc import ABC, abstractmethod
 
 import requests
 import msgspec
 import schedule
-from selenium import webdriver
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.remote.webelement import WebElement
@@ -15,33 +16,34 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from PIL import Image
 
-from .config import BotConfig
-from .predict import Captcha
-from .utils import get_logger
-from .driver import WEB_DRIVER_TYPE
+from ..config import BotConfig
+from ..utils import get_logger
+from ..predict import Captcha
 
 logger = get_logger(__name__)
 
 
-class Ticket(msgspec.Struct):
-    id: str
-    name: str
-    initiator: str
-    start_time: datetime.datetime
-    end_time: datetime.datetime
-    button: WebElement
+class BotBase(ABC):
 
-
-class Bot:
-    driver: webdriver.Chrome = None
-    model: Captcha = None
+    class Ticket(msgspec.Struct):
+        id: str
+        name: str
+        initiator: str
+        start_time: datetime.datetime
+        end_time: datetime.datetime
+        button: WebElement
 
     def __init__(self, bot_config: BotConfig):
+        self.driver = None
+        self.model = None
         self.bot_config = bot_config
         self.initial_model()
-        self.initial_browser()
 
     def __del__(self):
+        if self.driver:
+            self.driver.quit()
+
+    def close(self):
         if self.driver:
             self.driver.quit()
 
@@ -55,43 +57,9 @@ class Bot:
         logger.info("Initial yolo model %s", model_path)
         self.model = Captcha(model_path)
 
+    @abstractmethod
     def initial_browser(self):
-        web_driver_type, web_driver_path, proxy_server, headless = (
-            self.bot_config.web_driver_type,
-            self.bot_config.web_driver_path,
-            self.bot_config.proxy_server,
-            self.bot_config.headless,
-        )
-
-        logger.info("Initial web driver %s", web_driver_path)
-
-        if web_driver_type == WEB_DRIVER_TYPE.CHROME:
-            service = webdriver.ChromeService()
-            option = webdriver.ChromeOptions()
-            option.add_argument("--disable-gpu")
-            if headless:
-                option.add_argument("--headless=new")
-            # https://stackoverflow.com/questions/65080685/usb-usb-device-handle-win-cc1020-failed-to-read-descriptor-from-node-connectio
-            option.add_experimental_option(
-                "excludeSwitches", ["enable-logging"]
-            )
-
-            option.binary_location = web_driver_path
-            if proxy_server:
-                option.add_argument(f"--proxy-server={proxy_server}")
-            self.driver = webdriver.Chrome(service=service, options=option)
-        elif web_driver_type == WEB_DRIVER_TYPE.EDGE:
-            raise NotImplementedError
-        elif web_driver_type == WEB_DRIVER_TYPE.FIREFOX:
-            service = webdriver.FirefoxService(executable_path=web_driver_path)
-            option = webdriver.FirefoxOptions()
-            option.add_argument("--disable-gpu")
-            if headless:
-                option.add_argument("--headless")
-
-            if proxy_server:
-                option.add_argument(f"--proxy-server={proxy_server}")
-            self.driver = webdriver.Firefox(service=service, options=option)
+        raise NotImplementedError
 
     def __get_image(
         self, image_url: str, auth_key: str, auth_token: str, timeout_sec: int
@@ -271,7 +239,7 @@ class Bot:
         DATETIME_FORMAT = r"%Y/%m/%d %H:%M"
         tickets = list(
             map(
-                lambda cols: Ticket(
+                lambda cols: self.Ticket(
                     id=str(cols[0].text),
                     name=str(cols[1].text),
                     initiator=str(cols[2].text),
@@ -366,13 +334,21 @@ class Bot:
 
             return wrapper
 
-        schedule.every().day.at(start_time).do(schedule_wrapper(self.book))
+        def login_routine():
+            self.initial_browser()
+            self.login()
+
         schedule.every().day.at(pre_login_time).do(
-            schedule_wrapper(self.login)
+            schedule_wrapper(login_routine)
         )
+        schedule.every().day.at(start_time).do(schedule_wrapper(self.book))
 
         logger.info("Start working...")
 
         while True:
             schedule.run_pending()
-            time.sleep(1)
+            if len(schedule.get_jobs()) > 0:
+                time.sleep(1)
+            else:
+                self.close()
+                break
