@@ -1,6 +1,6 @@
 from selenium import webdriver
 
-from .botBase import BotBase
+from deipnon.bot.botBase import BotBase
 
 
 class ChromeBot(BotBase):

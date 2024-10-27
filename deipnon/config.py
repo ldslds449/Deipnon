@@ -1,7 +1,7 @@
 import msgspec
 import os
 
-from .driver import WEB_DRIVER_TYPE
+from deipnon.driver import WEB_DRIVER_TYPE
 
 
 class BotConfig(msgspec.Struct):

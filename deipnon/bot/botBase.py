@@ -7,7 +7,6 @@ from abc import ABC, abstractmethod
 
 import requests
 import msgspec
-import schedule
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -16,9 +15,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from PIL import Image
 
-from ..config import BotConfig
-from ..utils import get_logger
-from ..predict import Captcha
+from deipnon.config import BotConfig
+from deipnon.utils import get_logger
+from deipnon.predict import Captcha
 
 logger = get_logger(__name__)
 
@@ -322,33 +321,3 @@ class BotBase(ABC):
 
     def book(self) -> bool:
         return self.__retry_task(self.__book)
-
-    def wait_for_time_to_run_once(self):
-        start_time = self.bot_config.start_time
-        pre_login_time = self.bot_config.pre_login_time
-
-        def schedule_wrapper(func):
-            def wrapper():
-                func()
-                return schedule.CancelJob
-
-            return wrapper
-
-        def login_routine():
-            self.initial_browser()
-            self.login()
-
-        schedule.every().day.at(pre_login_time).do(
-            schedule_wrapper(login_routine)
-        )
-        schedule.every().day.at(start_time).do(schedule_wrapper(self.book))
-
-        logger.info("Start working...")
-
-        while True:
-            schedule.run_pending()
-            if len(schedule.get_jobs()) > 0:
-                time.sleep(1)
-            else:
-                self.close()
-                break

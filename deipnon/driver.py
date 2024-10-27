@@ -65,6 +65,7 @@ def download_webdriver(web_driver_type: WEB_DRIVER_TYPE, webdriver_path: str):
         for path in Path(webdriver_folder).rglob("chrome.exe"):
             return path.as_posix()
     elif web_driver_type == WEB_DRIVER_TYPE.EDGE:
+        logger.error("Please downalod and install webdriver manually")
         raise NotImplementedError
 
     elif web_driver_type == WEB_DRIVER_TYPE.FIREFOX:

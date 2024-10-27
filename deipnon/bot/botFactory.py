@@ -1,8 +1,8 @@
-from ..driver import WEB_DRIVER_TYPE
-from ..config import BotConfig
-from ..utils import get_logger
-from .bots import ChromeBot, EdgeBot, FirefoxBot
-from .botBase import BotBase
+from deipnon.driver import WEB_DRIVER_TYPE
+from deipnon.config import BotConfig
+from deipnon.utils import get_logger
+from deipnon.bot.bots import ChromeBot, EdgeBot, FirefoxBot
+from deipnon.bot.botBase import BotBase
 
 
 logger = get_logger(__name__)
