@@ -82,6 +82,8 @@ class GUI:
             self.bot.initial_browser()
             self.bot.login()
             self.bot.book()
+            self.bot.close()
+            logger.info("Finish")
             self.book_btn.state((ttk.NORMAL, ))
             self.schedule_btn.state((ttk.NORMAL, ))
 
@@ -121,6 +123,7 @@ class GUI:
                     time.sleep(0.1)
                 else:
                     self.bot.close()
+                    logger.info("Finish")
                     break
             self.book_btn.state((ttk.NORMAL, ))
             self.schedule_btn.state((ttk.NORMAL, ))
